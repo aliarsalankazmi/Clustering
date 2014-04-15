@@ -1,0 +1,20 @@
+####Check suitability of no. of clusters using the Gap Statistic
+
+## This function requires the user to enter:
+## 1. dataframe (class:df)
+## 2. range of clusters which are to be validated (class: vector)
+## 3. the number of random starts for the k-means algorithm (class: vector)
+## 4. the number of times resampling is to be performed
+
+
+calculateGapStat<- function(dataframe,number.clusters,starts,bootstrap){
+actual.total.wss<- sapply(1:number.clusters,function(y)kmeans(x=dataframe,centers=y,nstart=starts)$tot.withinss)
+var.length<- seq(from=1,to=ncol(dataframe))
+data.limits<- data.frame(min=apply(dataframe,2,min),max=apply(dataframe,2,max))
+uni.distributions<- lapply(1:bootstrap,function(x)data.frame(sapply(var.length,function(y)runif(n=nrow(dataframe),min=data.limits$min[y],max=data.limits$max[y]))))
+reference.total.wss<- sapply(uni.distributions,function(uni.distribution)sapply(1:number.clusters,function(y)kmeans(x=uni.distribution,centers=y,nstart=starts)$tot.withinss))
+reference.mean.total.wss<- apply(log(reference.total.wss),1,mean)
+sd.reference.total.wss<- apply(log(reference.total.wss),1,function(x)sd(x)/sqrt(1+1/bootstrap))
+results<- data.frame(noOfClusters=1:length(actual.total.wss),referenceDispersion=reference.mean.total.wss,actualDispersion=log(actual.total.wss),Gap=reference.mean.total.wss-log(actual.total.wss),sdDispersion=sd.reference.total.wss)
+return(results)
+}
